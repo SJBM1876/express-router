@@ -58,10 +58,26 @@ describe('Users Router', () => {
   it('should create a new user', async () => {
     const newUser = { name: 'Alice Johnson', email: 'alice@example.com' };
     const response = await request(app).post('/users').send(newUser);
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     expect(response.body).toHaveProperty('id', users.length + 1);
     expect(response.body).toHaveProperty('name', newUser.name);
     expect(response.body).toHaveProperty('email', newUser.email);
+  });
+
+  it('should return validation error for empty name', async () => {
+    const newUser = { name: '', email: 'invalid@example.com' };
+    const response = await request(app).post('/users').send(newUser);
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      error: [
+        {
+          value: '',
+          msg: 'Name must not be empty.',
+          param: 'name',
+          location: 'body'
+        }
+      ]
+    });
   });
 
   // PUT /users/:id - Update a user by ID
@@ -81,9 +97,17 @@ describe('Users Router', () => {
     expect(response.body).toEqual({ message: 'User not found' });
   });
 
-   // Check if the user is actually deleted
-   
-  
+  // DELETE /users/:id - Delete a user by ID
+  it('should delete a user by ID', async () => {
+    const response = await request(app).delete('/users/1');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'User deleted successfully' });
+
+    // Check if the user is actually deleted
+    const getResponse = await request(app).get('/users/1');
+    expect(getResponse.status).toBe(404);
+    expect(getResponse.body).toEqual({ message: 'User not found' });
+  });
 
   it('should return 404 if user not found for delete', async () => {
     const response = await request(app).delete('/users/100');
@@ -91,3 +115,4 @@ describe('Users Router', () => {
     expect(response.body).toEqual({ message: 'User not found' });
   });
 });
+
